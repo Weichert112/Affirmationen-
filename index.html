@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Affirmationen</title>
+<style>
+:root{
+  --bg:#E9EEF1; --surface:#F8FAFB; --ink:#1E2A3A; --muted:#5B6B7C;
+  --sun:#E3A62F; --sun-soft:#F4D58A; --sage:#3F7A71; --line:#CBD5DC;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#141C28; --surface:#1C2635; --ink:#EAF0F5; --muted:#9AA9B9;
+  --sun:#F0BE5A; --sun-soft:#5A4820; --sage:#8FBDB5; --line:#2E3B4D;}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:560px;margin:0 auto;padding:0 20px 48px}
+.sky{position:relative;height:170px;margin:0 -20px;overflow:hidden}
+.sky svg{position:absolute;inset:0;width:100%;height:100%}
+.sun{transform:translateY(46px);animation:rise 1.6s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.sun{animation:none;transform:none}}
+.date{color:var(--muted);font-size:.95rem;margin:18px 0 10px}
+.text{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.7rem,7vw,2.3rem);line-height:1.28;margin:0 0 28px;letter-spacing:-.01em;min-height:6.5em;overflow-wrap:break-word;transition:opacity .3s}
+.text.fade{opacity:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);padding:12px 18px;min-height:46px}
+button.primary{background:var(--ink);color:var(--bg);font-weight:600}
+button.quiet{border-color:var(--line);color:var(--muted)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+section{margin-top:40px;border-top:1px solid var(--line);padding-top:24px}
+h2{font-family:Georgia,serif;font-weight:500;font-size:1.3rem;margin:0 0 6px}
+p.hint{color:var(--muted);font-size:.92rem;margin:0 0 14px}
+textarea{width:100%;min-height:96px;resize:vertical;font:inherit;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+input[type=time]{font:inherit;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);min-height:46px}
+.row{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+label.sw{display:flex;align-items:center;gap:10px;font-weight:500;min-height:46px}
+label.sw input{width:22px;height:22px;accent-color:var(--sun)}
+.msg{font-size:.9rem;color:var(--sage)}
+ul{list-style:none;padding:0;margin:22px 0 0}
+li{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:14px 0;border-top:1px solid var(--line)}
+li span{flex:1;overflow-wrap:anywhere}
+li button{padding:6px 12px;min-height:38px;font-size:.88rem}
+li button.confirm{border-color:#C0463B;color:#C0463B;font-weight:600}
+.empty{color:var(--muted);font-size:.95rem;margin:18px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sky" aria-hidden="true">
+    <svg viewBox="0 0 560 170" preserveAspectRatio="xMidYMax slice">
+      <g class="sun">
+        <circle cx="280" cy="150" r="118" fill="var(--sun-soft)"/>
+        <circle cx="280" cy="150" r="78" fill="var(--sun)"/>
+      </g>
+      <rect x="0" y="148" width="560" height="22" fill="var(--bg)"/>
+      <line x1="0" y1="148.5" x2="560" y2="148.5" stroke="var(--ink)" stroke-width="1.5"/>
+    </svg>
+  </div>
+
+  <div class="date" id="date"></div>
+  <p class="text" id="text" aria-live="polite"></p>
+  <div class="actions">
+    <button class="primary" id="another">Anderer Text</button>
+    <button class="quiet" id="reset">Tagestext</button>
+  </div>
+
+  <section>
+    <h2>Erinnerung</h2>
+    <p class="hint" id="remhint">Jeden Tag eine Benachrichtigung mit dem Tagestext.</p>
+    <label class="sw"><input type="checkbox" id="remOn"> Täglich erinnern</label>
+    <div class="row">
+      <input type="time" id="remTime" value="08:00" aria-label="Uhrzeit der Erinnerung">
+      <button class="quiet" id="remTest">Test in 5 Sekunden</button>
+    </div>
+    <p class="msg" id="remMsg" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Eigene Texte</h2>
+    <p class="hint">Deine Texte mischen sich unter die vorgegebenen.</p>
+    <textarea id="input" maxlength="280" placeholder="Zum Beispiel: Ich gehe heute in meinem Tempo."></textarea>
+    <div class="row">
+      <button class="primary" id="add">Text speichern</button>
+      <span class="msg" id="msg" role="status"></span>
+    </div>
+    <ul id="list"></ul>
+    <p class="empty" id="empty">Noch keine eigenen Texte.</p>
+  </section>
+</div>
+
+<script>
+const BUILTIN = [
+"Heute darf es leicht sein.",
+"Ich muss nicht alles heute schaffen. Ein Schritt reicht.",
+"Ich bin genug, so wie ich bin.",
+"Aus kleinen Dingen wächst Großes.",
+"Ich vertraue meinem Weg, auch wenn ich ihn noch nicht ganz sehe.",
+"Heute entscheide ich, worauf ich meine Aufmerksamkeit richte.",
+"Ich darf Pausen machen, ohne mich zu rechtfertigen.",
+"Mein Tempo ist das richtige Tempo.",
+"Ich habe schon viel geschafft. Das zählt.",
+"Fehler gehören zum Lernen. Ich werde besser, nicht perfekt.",
+"Ich atme ein, ich atme aus. Im Moment ist alles gut.",
+"Heute gebe ich mein Bestes, und das genügt.",
+"Ich bin dankbar für das, was gerade da ist.",
+"Ich darf Nein sagen und trotzdem liebenswert sein.",
+"Jeder Morgen ist ein neuer Anfang.",
+"Ich bin stärker, als ich manchmal denke.",
+"Ich lasse los, was ich nicht ändern kann.",
+"Es ist okay, um Hilfe zu bitten.",
+"Ich verdiene Ruhe, Freude und Erfolg.",
+"Heute freue ich mich über etwas Kleines.",
+"Meine Arbeit hat Wert, auch wenn sie nicht sofort sichtbar ist.",
+"Ich wachse mit jeder Aufgabe, die ich anpacke.",
+"Ich darf mir Zeit nehmen. Gute Dinge brauchen Zeit.",
+"Ich bin ein guter Mensch und tue, was ich kann.",
+"Ich sehe das Gute in diesem Tag.",
+"Sorgen von gestern gehören nicht in den heutigen Tag.",
+"Ich behandle mich heute so freundlich wie einen guten Freund.",
+"Ich traue mir etwas zu.",
+"Ruhe ist auch Fortschritt.",
+"Ich bin geduldig mit mir und mit anderen.",
+"Ich habe schon Schwierigkeiten gemeistert. Ich meistere auch diese.",
+"Ich darf stolz auf mich sein.",
+"Heute pflanze ich etwas, das später blüht.",
+"Ich höre auf mein Gefühl und folge ihm.",
+"Jeder Tag bringt mir etwas Neues bei.",
+"Ich muss niemandem etwas beweisen.",
+"Ich erlaube mir, glücklich zu sein.",
+"Meine Gedanken sind freundlich zu mir.",
+"Ich schaffe das, Schritt für Schritt.",
+"Ich bin da, wo ich sein soll.",
+"Heute bringe ich Ruhe in alles, was ich tue.",
+"Ich bin umgeben von Möglichkeiten.",
+"Ich darf wachsen, auch langsam.",
+"Mut heißt, trotz Zweifel loszugehen.",
+"Ich schätze die kleinen Momente zwischendurch.",
+"Ich bin bereit für das, was heute kommt.",
+"Meine Ruhe ist meine Stärke.",
+"Ich sorge gut für mich, damit ich gut für andere da sein kann.",
+"Ich verdiene Gutes in meinem Leben.",
+"Ich bin lebendig, neugierig und offen.",
+"Das Wetter ändert sich. Meine Stimmung auch.",
+"Ich bleibe dran, auch an langsamen Tagen.",
+"Ich vergleiche mich nicht. Mein Weg ist meiner.",
+"Ich beginne den Tag mit einem tiefen Atemzug.",
+"Heute reicht mir ein gutes Gespräch, ein guter Gedanke, ein guter Bissen.",
+"Ich bin frei, mich neu zu entscheiden.",
+"Vieles wird leichter, wenn ich es einfach beginne.",
+"Ich darf vertrauen: Es fügt sich.",
+"Heute bin ich freundlich zu mir, und das strahlt aus.",
+"Ich bin dankbar für meine Hände, meine Zeit und meine Ideen.",
+"Das Beste kommt nicht erst irgendwann. Es kann auch heute beginnen."
+];
+
+const $ = id => document.getElementById(id);
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+
+let own = load('aff_own', []);
+let settings = Object.assign({enabled:true,time:'08:00'}, load('aff_settings', {}));
+const pool = () => BUILTIN.concat(own);
+
+function dayNum(d){return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000)}
+function textFor(d){const p=pool();return p[dayNum(d)%p.length]}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+
+function dailyText(){
+  const st=load('aff_pick',null);
+  if(st && st.day===todayKey() && typeof st.text==='string') return st.text;
+  const t=textFor(new Date());
+  save('aff_pick',{day:todayKey(),text:t});
+  return t;
+}
+function show(t){
+  const el=$('text'); el.classList.add('fade');
+  setTimeout(()=>{el.textContent=t;el.classList.remove('fade')},150);
+}
+
+/* ---- Benachrichtigungen (nur in der installierten App) ---- */
+const LN = (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications) || null;
+const DAYS_AHEAD = 60;
+
+async function schedule(){
+  if(!LN){ $('remMsg').textContent='Erinnerungen funktionieren nur in der installierten App.'; return; }
+  try{
+    const pend = await LN.getPending();
+    if(pend.notifications && pend.notifications.length){
+      await LN.cancel({notifications: pend.notifications.map(n=>({id:n.id}))});
+    }
+    if(!settings.enabled){ $('remMsg').textContent='Erinnerung ist aus.'; return; }
+    let perm = await LN.checkPermissions();
+    if(perm.display!=='granted') perm = await LN.requestPermissions();
+    if(perm.display!=='granted'){ $('remMsg').textContent='Benachrichtigungen sind blockiert. Bitte in den Android-Einstellungen für die App erlauben.'; return; }
+    const [h,m]=settings.time.split(':').map(Number);
+    const now=new Date(), list=[];
+    for(let i=0;i<DAYS_AHEAD;i++){
+      const at=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i,h,m,0);
+      if(at<=now) continue;
+      list.push({id:1000+i,title:'Dein Gedanke für heute',body:textFor(at),schedule:{at,allowWhileIdle:true}});
+    }
+    if(list.length) await LN.schedule({notifications:list});
+    $('remMsg').textContent='Erinnerung täglich um '+settings.time+' Uhr geplant.';
+  }catch(e){ $('remMsg').textContent='Fehler beim Planen: '+(e&&e.message?e.message:e); }
+}
+
+async function testNow(){
+  if(!LN){ $('remMsg').textContent='Test nur in der installierten App möglich.'; return; }
+  try{
+    let perm = await LN.checkPermissions();
+    if(perm.display!=='granted') perm = await LN.requestPermissions();
+    if(perm.display!=='granted'){ $('remMsg').textContent='Benachrichtigungen sind blockiert.'; return; }
+    await LN.schedule({notifications:[{id:999,title:'Dein Gedanke für heute',body:$('text').textContent,schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});
+    $('remMsg').textContent='Test geplant. In 5 Sekunden kommt die Benachrichtigung.';
+  }catch(e){ $('remMsg').textContent='Fehler: '+(e&&e.message?e.message:e); }
+}
+
+/* ---- UI ---- */
+function renderList(){
+  const ul=$('list'); ul.textContent='';
+  $('empty').style.display = own.length ? 'none':'block';
+  own.forEach((t,i)=>{
+    const li=document.createElement('li');
+    const s=document.createElement('span'); s.textContent=t;
+    const b=document.createElement('button'); b.className='quiet'; b.textContent='Löschen';
+    let armed=false, timer=null;
+    b.addEventListener('click',()=>{
+      if(!armed){
+        armed=true; b.textContent='Wirklich löschen?'; b.className='confirm';
+        timer=setTimeout(()=>{armed=false;b.textContent='Löschen';b.className='quiet'},4000);
+      } else {
+        clearTimeout(timer); own.splice(i,1); save('aff_own',own); renderList(); schedule();
+      }
+    });
+    li.append(s,b); ul.append(li);
+  });
+}
+
+$('another').addEventListener('click',()=>{
+  const p=pool(), cur=$('text').textContent; let t;
+  do{ t=p[Math.floor(Math.random()*p.length)] }while(p.length>1 && t===cur);
+  save('aff_pick',{day:todayKey(),text:t}); show(t);
+});
+$('reset').addEventListener('click',()=>{
+  const t=textFor(new Date()); save('aff_pick',{day:todayKey(),text:t}); show(t);
+});
+$('add').addEventListener('click',()=>{
+  const v=$('input').value.trim(), m=$('msg');
+  if(!v){m.textContent='Bitte zuerst einen Text eingeben.';return}
+  if(own.includes(v)||BUILTIN.includes(v)){m.textContent='Diesen Text gibt es schon.';return}
+  own.push(v); const ok=save('aff_own',own); $('input').value='';
+  m.textContent = ok ? 'Gespeichert.' : 'Konnte nicht gespeichert werden.';
+  setTimeout(()=>{m.textContent=''},2500);
+  renderList(); schedule();
+});
+$('remOn').addEventListener('change',e=>{settings.enabled=e.target.checked;save('aff_settings',settings);schedule()});
+$('remTime').addEventListener('change',e=>{if(e.target.value){settings.time=e.target.value;save('aff_settings',settings);schedule()}});
+$('remTest').addEventListener('click',testNow);
+
+$('date').textContent = new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+$('text').textContent = dailyText();
+$('remOn').checked = settings.enabled;
+$('remTime').value = settings.time;
+renderList();
+schedule();
+</script>
+</body>
+</html>
